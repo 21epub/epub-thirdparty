@@ -5,18 +5,15 @@ import resolve from 'rollup-plugin-node-resolve';
 import babel from 'rollup-plugin-babel';
 import eslint from '@rollup/plugin-eslint';
 import typescript from '@rollup/plugin-typescript';
-import path from 'path';
-import fs from 'fs';
 
-const extensions = ['.ts', '.tsx', '.js', '.jsx'];
-const inputPath = path.resolve('src');
 const outputDir = 'dist';
 
 export default {
   // 输入配置
-  input: extensions
-    .map((ext) => path.resolve(inputPath, `index${ext}`))
-    .find((file) => fs.existsSync(file)),
+  input: 'src/index.ts',
+  // input: extensions
+  //   .map((ext) => path.resolve(inputPath, `index${ext}`))
+  //   .find((file) => fs.existsSync(file)),
   // 输出配置
   output: [
     // 打包为commonJS模块

@@ -5,7 +5,6 @@
   },
   "extends": [
     "eslint:recommended",
-    "plugin:yml/standard",
     "plugin:sonarjs/recommended",
     "plugin:@typescript-eslint/recommended"
   ],
@@ -35,6 +34,8 @@
     "@typescript-eslint/no-explicit-any": "off",
     "sonarjs/no-nested-template-literals": "off",
     "sonarjs/prefer-immediate-return": "off",
+    "sonarjs/cognitive-complexity": "off",
+    "no-extra-boolean-cast": "off",
     "no-var": "off"
   }
 }
