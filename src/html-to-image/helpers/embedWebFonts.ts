@@ -134,38 +134,37 @@ async function getCSSRules(
       try {
         // eslint-disable-next-line
         toArray<CSSRule>(sheet.cssRules || []).forEach((item, index) => {
-            if (item.type === CSSRule.IMPORT_RULE) {
-              let importIndex = index + 1;
-              const url = (item as CSSImportRule).href;
-              const deferred = fetchCSS(url)
-                .then((metadata) =>
-                  metadata ? embedFonts(metadata, options) : ''
-                )
-                .then((cssText) =>
-                  parseCSS(cssText).forEach((rule) => {
-                    try {
-                      sheet.insertRule(
-                        rule,
-                        rule.startsWith('@import')
-                          ? (importIndex += 1)
-                          : sheet.cssRules.length,
-                      );
-                    } catch (error) {
-                      console.error('Error inserting rule from remote css', {
-                        rule,
-                        error,
-                      });
-                    }
-                  })
-                )
-                .catch((e) => {
-                  console.error('Error loading remote css', e.toString());
-                });
+          if (item.type === CSSRule.IMPORT_RULE) {
+            let importIndex = index + 1;
+            const url = (item as CSSImportRule).href;
+            const deferred = fetchCSS(url)
+              .then((metadata) =>
+                metadata ? embedFonts(metadata, options) : ''
+              )
+              .then((cssText) =>
+                parseCSS(cssText).forEach((rule) => {
+                  try {
+                    sheet.insertRule(
+                      rule,
+                      rule.startsWith('@import')
+                        ? (importIndex += 1)
+                        : sheet.cssRules.length
+                    );
+                  } catch (error) {
+                    console.error('Error inserting rule from remote css', {
+                      rule,
+                      error,
+                    });
+                  }
+                })
+              )
+              .catch((e) => {
+                console.error('Error loading remote css', e.toString());
+              });
 
-              deferreds.push(deferred);
-            }
+            deferreds.push(deferred);
           }
-        );
+        });
       } catch (e: any) {
         const inline =
           styleSheets.find((a) => a.href == null) || document.styleSheets[0];
@@ -177,7 +176,7 @@ async function getCSSRules(
               )
               .then((cssText) =>
                 parseCSS(cssText).forEach((rule) => {
-                  inline.insertRule(rule, sheet.cssRules.length)
+                  inline.insertRule(rule, sheet.cssRules.length);
                 })
               )
               .catch((err) => {
@@ -198,8 +197,7 @@ async function getCSSRules(
     styleSheets.forEach((sheet) => {
       if ('cssRules' in sheet) {
         try {
-          // eslint-disable-next-line
-          toArray<CSSStyleRule>(sheet.hasOwnProperty('cssRules')).forEach(
+          toArray<CSSStyleRule>(sheet.cssRules || []).forEach(
             (item: CSSStyleRule) => {
               ret.push(item);
             }
@@ -263,12 +261,15 @@ export async function embedWebFonts(
 ): Promise<HTMLElement> {
   return await (options.fontEmbedCSS != null
     ? Promise.resolve(options.fontEmbedCSS)
+    : options.skipFonts
+    ? Promise.resolve(null)
     : getWebFontCSS(clonedNode, options)
   ).then((cssText) => {
+    if(!cssText) return clonedNode;
     const styleNode = document.createElement('style');
-    const sytleContent = document.createTextNode(cssText);
+    const styleContent = document.createTextNode(cssText);
 
-    styleNode.appendChild(sytleContent);
+    styleNode.appendChild(styleContent);
 
     if (clonedNode.firstChild) {
       clonedNode.insertBefore(styleNode, clonedNode.firstChild);

@@ -1,3 +1,4 @@
+/* eslint-disable func-style */
 /* eslint-disable no-return-await */
 import type { OptionsType } from './type';
 
@@ -70,7 +71,7 @@ export function parseDataUrlContent(dataURL: string) {
   return dataURL.split(/,/)[1];
 }
 
-export const uuid = (()=> {
+export const uuid = (() => {
   // generate uuid for className of pseudo elements.
   // We should not use GUIDs, otherwise pseudo elements sometimes cannot be captured.
   let counter = 0;
@@ -89,8 +90,8 @@ export const uuid = (()=> {
 export function delay<T>(ms: number) {
   return (args: T) =>
     new Promise<T>((resolve) => {
-      setTimeout(() => resolve(args), ms)
-    })
+      setTimeout(() => resolve(args), ms);
+    });
 }
 
 export function toArray<T>(arrayLike: any): T[] {
@@ -152,9 +153,9 @@ export function canvasToBlob(
       canvas.toBlob(
         resolve,
         options.type ? options.type : 'image/png',
-        options.quality ? options.quality : 1,
-      )
-    })
+        options.quality ? options.quality : 1
+      );
+    });
   }
 
   return new Promise((resolve) => {
@@ -199,11 +200,11 @@ export async function svgToDataURL(svg: SVGElement): Promise<string> {
     .then((html) => `data:image/svg+xml;charset=utf-8,${html}`);
 }
 
-export async function nodeToDataURL(
+export async function nodeToSvg(
   node: HTMLElement,
   width: number,
   height: number
-): Promise<string> {
+): Promise<SVGElement> {
   const xmlns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(xmlns, 'svg');
   const foreignObject = document.createElementNS(xmlns, 'foreignObject');
@@ -221,5 +222,5 @@ export async function nodeToDataURL(
   svg.appendChild(foreignObject);
   foreignObject.appendChild(node);
 
-  return await svgToDataURL(svg);
+  return await svg;
 }

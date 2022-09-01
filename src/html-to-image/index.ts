@@ -1,3 +1,4 @@
+/* eslint-disable func-style */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-return-await */
 /* sonarjs-disable*/
@@ -15,28 +16,14 @@ import {
   getPixelRatio,
   createImage,
   canvasToBlob,
-  nodeToDataURL,
+  nodeToSvg,
+  svgToDataURL,
 } from './util';
 
 function getImageSize(node: HTMLElement, options: OptionsType = {}) {
   const width = options.width || getNodeWidth(node);
   const height = options.height || getNodeHeight(node);
-
   return { width, height };
-}
-
-export async function toSvg<T extends HTMLElement>(
-  node: T,
-  options: OptionsType = {}
-): Promise<string> {
-  const { width, height } = getImageSize(node, options);
-
-  return await Promise.resolve(node)
-    .then((nativeNode) => cloneNode(nativeNode, options, true))
-    .then((clonedNode) => embedWebFonts(clonedNode!, options))
-    .then((clonedNode) => embedImages(clonedNode, options))
-    .then((clonedNode) => applyStyleWithOptions(clonedNode, options))
-    .then((clonedNode) => nodeToDataURL(clonedNode, width, height));
 }
 
 const dimensionCanvasLimit = 16384; // as per https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#maximum_canvas_size
@@ -66,39 +53,62 @@ function checkCanvasDimensions(canvas: HTMLCanvasElement) {
     }
   }
 }
+
+export async function toSvg<T extends HTMLElement>(
+  node: T,
+  options: OptionsType = {}
+): Promise<SVGElement> {
+  const { width, height } = getImageSize(node, options);
+
+  return await Promise.resolve(node)
+    .then((nativeNode) => cloneNode(nativeNode, options, true))
+    .then((clonedNode) => embedWebFonts(clonedNode!, options))
+    .then((clonedNode) => embedImages(clonedNode, options))
+    .then((clonedNode) => applyStyleWithOptions(clonedNode, options))
+    .then((clonedNode) => nodeToSvg(clonedNode, width, height));
+}
+
+export async function toSvgUrl<T extends HTMLElement>(
+  node: T,
+  options: OptionsType = {}
+): Promise<string> {
+  return await toSvg(node, options).then((svg) => svgToDataURL(svg));
+}
+
 export async function toCanvas<T extends HTMLElement>(
   node: T,
   options: OptionsType = {}
 ): Promise<HTMLCanvasElement> {
-  return await toSvg(node, options)
+  return await toSvgUrl(node, options)
     .then(createImage)
     .then((img) => {
-      const canvas = document.createElement('canvas');
-      // eslint-disable-next-line
-      const context = canvas.getContext('2d')!;
-      const ratio = options.pixelRatio || getPixelRatio();
-      const { width, height } = getImageSize(node, options);
+      return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        // eslint-disable-next-line
+        const context = canvas.getContext('2d')!;
+        const ratio = options.pixelRatio || getPixelRatio();
+        const { width, height } = getImageSize(node, options);
 
-      const canvasWidth = options.canvasWidth || width;
-      const canvasHeight = options.canvasHeight || height;
+        const canvasWidth = options.canvasWidth || width;
+        const canvasHeight = options.canvasHeight || height;
 
-      canvas.width = canvasWidth * ratio;
-      canvas.height = canvasHeight * ratio;
+        canvas.width = canvasWidth * ratio;
+        canvas.height = canvasHeight * ratio;
 
-      if (!options.skipAutoScale) {
-        checkCanvasDimensions(canvas);
-      }
-      canvas.style.width = `${canvasWidth}`;
-      canvas.style.height = `${canvasHeight}`;
+        if (!options.skipAutoScale) {
+          checkCanvasDimensions(canvas);
+        }
+        canvas.style.width = `${canvasWidth}`;
+        canvas.style.height = `${canvasHeight}`;
 
-      if (options.backgroundColor) {
-        context.fillStyle = options.backgroundColor;
-        context.fillRect(0, 0, canvas.width, canvas.height);
-      }
+        if (options.backgroundColor) {
+          context.fillStyle = options.backgroundColor;
+          context.fillRect(0, 0, canvas.width, canvas.height);
+        }
 
-      context.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      return canvas;
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas);
+      });
     });
 }
 
@@ -142,4 +152,14 @@ export async function getFontEmbedCSS<T extends HTMLElement>(
   options: OptionsType = {}
 ): Promise<string> {
   return await getWebFontCSS(node, options);
+}
+
+export async function toNewNode<T extends HTMLElement>(
+  node: T,
+  options: OptionsType = {}
+): Promise<any> {
+  return await Promise.resolve(node)
+    .then((nativeNode) => cloneNode(nativeNode, options, true))
+    .then((clonedNode) => embedImages(clonedNode!, options))
+    .then((clonedNode) => applyStyleWithOptions(clonedNode, options));
 }
