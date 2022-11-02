@@ -1,31 +1,5 @@
-/* eslint-disable func-style */
-/* eslint-disable no-return-await */
-import type { OptionsType } from './type';
-
-const WOFF = 'application/font-woff';
-const JPEG = 'image/jpeg';
-const mimes: { [key: string]: string } = {
-  woff: WOFF,
-  woff2: WOFF,
-  ttf: 'application/font-truetype',
-  eot: 'application/vnd.ms-fontobject',
-  png: 'image/png',
-  jpg: JPEG,
-  jpeg: JPEG,
-  gif: 'image/gif',
-  tiff: 'image/tiff',
-  svg: 'image/svg+xml',
-};
-
-export function getExtension(url: string): string {
-  const match = /\.([^./]*?)$/g.exec(url);
-  return match ? match[1] : '';
-}
-
-export function getMimeType(url: string): string {
-  const extension = getExtension(url).toLowerCase();
-  return mimes[extension] || '';
-}
+/* eslint-disable require-await */
+import type { Options } from './types';
 
 export function resolveUrl(url: string, baseUrl: string | null): string {
   // url is absolute already
@@ -59,18 +33,6 @@ export function resolveUrl(url: string, baseUrl: string | null): string {
   return a.href;
 }
 
-export function isDataUrl(url: string) {
-  return url.search(/^(data:)/) !== -1;
-}
-
-export function makeDataUrl(content: string, mimeType: string) {
-  return `data:${mimeType};base64,${content}`;
-}
-
-export function parseDataUrlContent(dataURL: string) {
-  return dataURL.split(/,/)[1];
-}
-
 export const uuid = (() => {
   // generate uuid for className of pseudo elements.
   // We should not use GUIDs, otherwise pseudo elements sometimes cannot be captured.
@@ -97,7 +59,7 @@ export function delay<T>(ms: number) {
 export function toArray<T>(arrayLike: any): T[] {
   const arr: T[] = [];
 
-  for (let i = 0, l = arrayLike.length; i < l; i += 1) {
+  for (let i = 0, l = arrayLike.length; i < l; i++) {
     arr.push(arrayLike[i]);
   }
 
@@ -105,20 +67,28 @@ export function toArray<T>(arrayLike: any): T[] {
 }
 
 function px(node: HTMLElement, styleProperty: string) {
-  const val = window.getComputedStyle(node).getPropertyValue(styleProperty);
-  return parseFloat(val.replace('px', ''));
+  const win = node.ownerDocument.defaultView || window;
+  const val = win.getComputedStyle(node).getPropertyValue(styleProperty);
+  return val ? parseFloat(val.replace('px', '')) : 0;
 }
 
-export function getNodeWidth(node: HTMLElement) {
+function getNodeWidth(node: HTMLElement) {
   const leftBorder = px(node, 'border-left-width');
   const rightBorder = px(node, 'border-right-width');
   return node.clientWidth + leftBorder + rightBorder;
 }
 
-export function getNodeHeight(node: HTMLElement) {
+function getNodeHeight(node: HTMLElement) {
   const topBorder = px(node, 'border-top-width');
   const bottomBorder = px(node, 'border-bottom-width');
   return node.clientHeight + topBorder + bottomBorder;
+}
+
+export function getImageSize(targetNode: HTMLElement, options: Options = {}) {
+  const width = options.width || getNodeWidth(targetNode);
+  const height = options.height || getNodeHeight(targetNode);
+
+  return { width, height };
 }
 
 export function getPixelRatio() {
@@ -144,9 +114,38 @@ export function getPixelRatio() {
   return ratio || window.devicePixelRatio || 1;
 }
 
+// @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#maximum_canvas_size
+const canvasDimensionLimit = 16384;
+
+export function checkCanvasDimensions(canvas: HTMLCanvasElement) {
+  if (
+    canvas.width > canvasDimensionLimit ||
+    canvas.height > canvasDimensionLimit
+  ) {
+    if (
+      canvas.width > canvasDimensionLimit &&
+      canvas.height > canvasDimensionLimit
+    ) {
+      if (canvas.width > canvas.height) {
+        canvas.height *= canvasDimensionLimit / canvas.width;
+        canvas.width = canvasDimensionLimit;
+      } else {
+        canvas.width *= canvasDimensionLimit / canvas.height;
+        canvas.height = canvasDimensionLimit;
+      }
+    } else if (canvas.width > canvasDimensionLimit) {
+      canvas.height *= canvasDimensionLimit / canvas.width;
+      canvas.width = canvasDimensionLimit;
+    } else {
+      canvas.width *= canvasDimensionLimit / canvas.height;
+      canvas.height = canvasDimensionLimit;
+    }
+  }
+}
+
 export function canvasToBlob(
   canvas: HTMLCanvasElement,
-  options: OptionsType = {}
+  options: Options = {}
 ): Promise<Blob | null> {
   if (canvas.toBlob) {
     return new Promise((resolve) => {
@@ -185,7 +184,7 @@ export function canvasToBlob(
 export function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => setTimeout(() => resolve(img));
+    img.onload = () => setTimeout(() => resolve(img), 50);
     img.onerror = reject;
     img.crossOrigin = 'anonymous';
     img.decoding = 'sync';
@@ -194,17 +193,17 @@ export function createImage(url: string): Promise<HTMLImageElement> {
 }
 
 export async function svgToDataURL(svg: SVGElement): Promise<string> {
-  return await Promise.resolve()
+  return Promise.resolve()
     .then(() => new XMLSerializer().serializeToString(svg))
     .then(encodeURIComponent)
     .then((html) => `data:image/svg+xml;charset=utf-8,${html}`);
 }
 
-export async function nodeToSvg(
+export async function nodeToDataURL(
   node: HTMLElement,
   width: number,
   height: number
-): Promise<SVGElement> {
+): Promise<string> {
   const xmlns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(xmlns, 'svg');
   const foreignObject = document.createElementNS(xmlns, 'foreignObject');
@@ -222,5 +221,5 @@ export async function nodeToSvg(
   svg.appendChild(foreignObject);
   foreignObject.appendChild(node);
 
-  return await svg;
+  return svgToDataURL(svg);
 }

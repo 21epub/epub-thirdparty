@@ -1,4 +1,4 @@
-export interface OptionsType {
+export interface Options {
   /**
    * Width in pixels to be applied to node before rendering.
    */
@@ -39,7 +39,7 @@ export interface OptionsType {
    * requests to enable cache busting.
    */
   cacheBust?: boolean
-    /**
+  /**
    * Set false to use all URL as cache key.
    * Default: false | undefined - which strips away the query parameters
    */
@@ -84,6 +84,7 @@ export interface OptionsType {
    * A string indicating the image format. The default type is image/png; that type is also used if the given type isn't supported.
    */
   type?: string
+
   /**
    *
    *the second parameter of  window.fetch (Promise<Response> fetch(input[, init]))

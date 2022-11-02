@@ -1,8 +1,8 @@
-import type { OptionsType } from '../type'
+import type { Options } from './types'
 
-export function applyStyleWithOptions<T extends HTMLElement>(
+export function applyStyle<T extends HTMLElement>(
   node: T,
-  options: OptionsType,
+  options: Options,
 ): T {
   const { style } = node
 

@@ -25,6 +25,8 @@
     "@typescript-eslint/consistent-type-imports": "warn",
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/no-empty-function": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-this-alias": "off",
     "@typescript-eslint/no-empty-interface": [
       "error",
       {
@@ -36,6 +38,8 @@
     "sonarjs/prefer-immediate-return": "off",
     "sonarjs/cognitive-complexity": "off",
     "no-extra-boolean-cast": "off",
-    "no-var": "off"
+    "no-var": "off",
+    "no-sparse-arrays": "off",
+    "no-fallthrough": "off"
   }
 }

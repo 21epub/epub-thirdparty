@@ -1,165 +1,103 @@
-/* eslint-disable func-style */
+/* eslint-disable require-await */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable no-return-await */
-/* sonarjs-disable*/
-import type { OptionsType } from './type';
+import type { Options } from './types';
+import { cloneNode } from './clone-node';
+import { embedImages } from './embed-images';
+import { applyStyle } from './apply-style';
+import { embedWebFonts, getWebFontCSS } from './embed-webfonts';
 import {
-  cloneNode,
-  embedImages,
-  applyStyleWithOptions,
-  embedWebFonts,
-  getWebFontCSS,
-} from './helpers';
-import {
-  getNodeWidth,
-  getNodeHeight,
+  getImageSize,
   getPixelRatio,
   createImage,
   canvasToBlob,
-  nodeToSvg,
-  svgToDataURL,
+  nodeToDataURL,
+  checkCanvasDimensions,
 } from './util';
-
-function getImageSize(node: HTMLElement, options: OptionsType = {}) {
-  const width = options.width || getNodeWidth(node);
-  const height = options.height || getNodeHeight(node);
-  return { width, height };
-}
-
-const dimensionCanvasLimit = 16384; // as per https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#maximum_canvas_size
-
-function checkCanvasDimensions(canvas: HTMLCanvasElement) {
-  if (
-    canvas.width > dimensionCanvasLimit ||
-    canvas.height > dimensionCanvasLimit
-  ) {
-    if (
-      canvas.width > dimensionCanvasLimit &&
-      canvas.height > dimensionCanvasLimit
-    ) {
-      if (canvas.width > canvas.height) {
-        canvas.height *= dimensionCanvasLimit / canvas.width;
-        canvas.width = dimensionCanvasLimit;
-      } else {
-        canvas.width *= dimensionCanvasLimit / canvas.height;
-        canvas.height = dimensionCanvasLimit;
-      }
-    } else if (canvas.width > dimensionCanvasLimit) {
-      canvas.height *= dimensionCanvasLimit / canvas.width;
-      canvas.width = dimensionCanvasLimit;
-    } else {
-      canvas.width *= dimensionCanvasLimit / canvas.height;
-      canvas.height = dimensionCanvasLimit;
-    }
-  }
-}
 
 export async function toSvg<T extends HTMLElement>(
   node: T,
-  options: OptionsType = {}
-): Promise<SVGElement> {
-  const { width, height } = getImageSize(node, options);
-
-  return await Promise.resolve(node)
-    .then((nativeNode) => cloneNode(nativeNode, options, true))
-    .then((clonedNode) => embedWebFonts(clonedNode!, options))
-    .then((clonedNode) => embedImages(clonedNode, options))
-    .then((clonedNode) => applyStyleWithOptions(clonedNode, options))
-    .then((clonedNode) => nodeToSvg(clonedNode, width, height));
-}
-
-export async function toSvgUrl<T extends HTMLElement>(
-  node: T,
-  options: OptionsType = {}
+  options: Options = {}
 ): Promise<string> {
-  return await toSvg(node, options).then((svg) => svgToDataURL(svg));
+  const { width, height } = getImageSize(node, options);
+  const clonedNode = (await cloneNode(node, options, true)) as HTMLElement;
+  await embedWebFonts(clonedNode, options);
+  await embedImages(clonedNode, options);
+  applyStyle(clonedNode, options);
+  const datauri = await nodeToDataURL(clonedNode, width, height);
+  return datauri;
 }
 
 export async function toCanvas<T extends HTMLElement>(
   node: T,
-  options: OptionsType = {}
+  options: Options = {}
 ): Promise<HTMLCanvasElement> {
-  return await toSvgUrl(node, options)
-    .then(createImage)
-    .then((img) => {
-      return new Promise((resolve) => {
-        const canvas = document.createElement('canvas');
-        // eslint-disable-next-line
-        const context = canvas.getContext('2d')!;
-        const ratio = options.pixelRatio || getPixelRatio();
-        const { width, height } = getImageSize(node, options);
+  const { width, height } = getImageSize(node, options);
+  const svg = await toSvg(node, options);
+  const img = await createImage(svg);
 
-        const canvasWidth = options.canvasWidth || width;
-        const canvasHeight = options.canvasHeight || height;
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d')!;
+  const ratio = options.pixelRatio || getPixelRatio();
+  const canvasWidth = options.canvasWidth || width;
+  const canvasHeight = options.canvasHeight || height;
 
-        canvas.width = canvasWidth * ratio;
-        canvas.height = canvasHeight * ratio;
+  canvas.width = canvasWidth * ratio;
+  canvas.height = canvasHeight * ratio;
 
-        if (!options.skipAutoScale) {
-          checkCanvasDimensions(canvas);
-        }
-        canvas.style.width = `${canvasWidth}`;
-        canvas.style.height = `${canvasHeight}`;
+  if (!options.skipAutoScale) {
+    checkCanvasDimensions(canvas);
+  }
+  canvas.style.width = `${canvasWidth}`;
+  canvas.style.height = `${canvasHeight}`;
 
-        if (options.backgroundColor) {
-          context.fillStyle = options.backgroundColor;
-          context.fillRect(0, 0, canvas.width, canvas.height);
-        }
+  if (options.backgroundColor) {
+    context.fillStyle = options.backgroundColor;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
-        context.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas);
-      });
-    });
+  context.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  return canvas;
 }
 
 export async function toPixelData<T extends HTMLElement>(
   node: T,
-  options: OptionsType = {}
+  options: Options = {}
 ): Promise<Uint8ClampedArray> {
   const { width, height } = getImageSize(node, options);
-  return await toCanvas(node, options).then((canvas) => {
-    // eslint-disable-next-line
-    const ctx = canvas.getContext('2d')!;
-    return ctx.getImageData(0, 0, width, height).data;
-  });
+  const canvas = await toCanvas(node, options);
+  const ctx = canvas.getContext('2d')!;
+  return ctx.getImageData(0, 0, width, height).data;
 }
 
 export async function toPng<T extends HTMLElement>(
   node: T,
-  options: OptionsType = {}
+  options: Options = {}
 ): Promise<string> {
-  return await toCanvas(node, options).then((canvas) => canvas.toDataURL());
+  const canvas = await toCanvas(node, options);
+  return canvas.toDataURL();
 }
 
 export async function toJpeg<T extends HTMLElement>(
   node: T,
-  options: OptionsType = {}
+  options: Options = {}
 ): Promise<string> {
-  return await toCanvas(node, options).then((canvas) =>
-    canvas.toDataURL('image/jpeg', options.quality || 1)
-  );
+  const canvas = await toCanvas(node, options);
+  return canvas.toDataURL('image/jpeg', options.quality || 1);
 }
 
 export async function toBlob<T extends HTMLElement>(
   node: T,
-  options: OptionsType = {}
+  options: Options = {}
 ): Promise<Blob | null> {
-  return await toCanvas(node, options).then(canvasToBlob);
+  const canvas = await toCanvas(node, options);
+  const blob = await canvasToBlob(canvas);
+  return blob;
 }
 
 export async function getFontEmbedCSS<T extends HTMLElement>(
   node: T,
-  options: OptionsType = {}
+  options: Options = {}
 ): Promise<string> {
-  return await getWebFontCSS(node, options);
-}
-
-export async function toNewNode<T extends HTMLElement>(
-  node: T,
-  options: OptionsType = {}
-): Promise<any> {
-  return await Promise.resolve(node)
-    .then((nativeNode) => cloneNode(nativeNode, options, true))
-    .then((clonedNode) => embedImages(clonedNode!, options))
-    .then((clonedNode) => applyStyleWithOptions(clonedNode, options));
+  return getWebFontCSS(node, options);
 }
