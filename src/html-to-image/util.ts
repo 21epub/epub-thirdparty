@@ -184,7 +184,17 @@ export function canvasToBlob(
 export function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => setTimeout(() => resolve(img), 50);
+    const resolveImg = (newImage: HTMLImageElement) => {
+      setTimeout(() => resolve(newImage), 50);
+    };
+    img.onload = (e) => {
+      const image = e.target || img;
+      if ((image as HTMLImageElement).decode) {
+        (image as HTMLImageElement).decode().then(() => resolveImg(img));
+      } else {
+        resolveImg(img);
+      }
+    };
     img.onerror = reject;
     img.crossOrigin = 'anonymous';
     img.decoding = 'sync';
