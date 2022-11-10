@@ -65,7 +65,7 @@
     },
     flipOptions = {
       // 设置每个角的活动区域大小
-      cornerSize: 180,
+      cornerSize: 150,
     },
     // 设置多少页面可以显示在html的DOM树中，最小值为6
     pagesInDOM = 200,
@@ -2246,7 +2246,6 @@
                 point.x = origin.x;
                 point.y = origin.y;
                 flipMethods._showFoldedPage.call(this, point, true);
-              } else {
               }
             } else {
               if (data.status == 'hover') {
@@ -2255,7 +2254,7 @@
               }
             }
           } else {
-            data.corner = flipMethods._isIArea.call(this, e[0]);
+            if (isTouch) data.corner = flipMethods._isIArea.call(this, e[0]);
           }
         }
       },
