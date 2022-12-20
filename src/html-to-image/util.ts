@@ -189,7 +189,7 @@ export function createImage(url: string): Promise<HTMLImageElement> {
     };
     img.onload = (e) => {
       const image = e.target || img;
-      if ((image as HTMLImageElement).decode) {
+      if (typeof (image as HTMLImageElement).decode === 'function') {
         (image as HTMLImageElement).decode().then(() => resolveImg(img));
       } else {
         resolveImg(img);
