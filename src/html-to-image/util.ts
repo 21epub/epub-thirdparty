@@ -1,102 +1,101 @@
-/* eslint-disable require-await */
-import type { Options } from './types';
+import type { Options } from './types'
 
 export function resolveUrl(url: string, baseUrl: string | null): string {
   // url is absolute already
   if (url.match(/^[a-z]+:\/\//i)) {
-    return url;
+    return url
   }
 
   // url is absolute already, without protocol
   if (url.match(/^\/\//)) {
-    return window.location.protocol + url;
+    return window.location.protocol + url
   }
 
   // dataURI, mailto:, tel:, etc.
   if (url.match(/^[a-z]+:/i)) {
-    return url;
+    return url
   }
 
-  const doc = document.implementation.createHTMLDocument();
-  const base = doc.createElement('base');
-  const a = doc.createElement('a');
+  const doc = document.implementation.createHTMLDocument()
+  const base = doc.createElement('base')
+  const a = doc.createElement('a')
 
-  doc.head.appendChild(base);
-  doc.body.appendChild(a);
+  doc.head.appendChild(base)
+  doc.body.appendChild(a)
 
   if (baseUrl) {
-    base.href = baseUrl;
+    base.href = baseUrl
   }
 
-  a.href = url;
+  a.href = url
 
-  return a.href;
+  return a.href
 }
 
 export const uuid = (() => {
   // generate uuid for className of pseudo elements.
   // We should not use GUIDs, otherwise pseudo elements sometimes cannot be captured.
-  let counter = 0;
+  let counter = 0
 
   // ref: http://stackoverflow.com/a/6248722/2519373
   const random = () =>
     // eslint-disable-next-line no-bitwise
-    `0000${((Math.random() * 36 ** 4) << 0).toString(36)}`.slice(-4);
+    `0000${((Math.random() * 36 ** 4) << 0).toString(36)}`.slice(-4)
 
   return () => {
-    counter += 1;
-    return `u${random()}${counter}`;
-  };
-})();
+    counter += 1
+    return `u${random()}${counter}`
+  }
+})()
 
 export function delay<T>(ms: number) {
   return (args: T) =>
     new Promise<T>((resolve) => {
-      setTimeout(() => resolve(args), ms);
-    });
+      setTimeout(() => resolve(args), ms)
+    })
 }
 
 export function toArray<T>(arrayLike: any): T[] {
-  const arr: T[] = [];
+  const arr: T[] = []
 
   for (let i = 0, l = arrayLike.length; i < l; i++) {
-    arr.push(arrayLike[i]);
+    arr.push(arrayLike[i])
   }
 
-  return arr;
+  return arr
 }
 
 function px(node: HTMLElement, styleProperty: string) {
-  const win = node.ownerDocument.defaultView || window;
-  const val = win.getComputedStyle(node).getPropertyValue(styleProperty);
-  return val ? parseFloat(val.replace('px', '')) : 0;
+  const win = node.ownerDocument.defaultView || window
+  const val = win.getComputedStyle(node).getPropertyValue(styleProperty)
+  return val ? parseFloat(val.replace('px', '')) : 0
 }
 
 function getNodeWidth(node: HTMLElement) {
-  const leftBorder = px(node, 'border-left-width');
-  const rightBorder = px(node, 'border-right-width');
-  return node.clientWidth + leftBorder + rightBorder;
+  const leftBorder = px(node, 'border-left-width')
+  const rightBorder = px(node, 'border-right-width')
+  return node.clientWidth + leftBorder + rightBorder
 }
 
 function getNodeHeight(node: HTMLElement) {
-  const topBorder = px(node, 'border-top-width');
-  const bottomBorder = px(node, 'border-bottom-width');
-  return node.clientHeight + topBorder + bottomBorder;
+  const topBorder = px(node, 'border-top-width')
+  const bottomBorder = px(node, 'border-bottom-width')
+  return node.clientHeight + topBorder + bottomBorder
 }
 
 export function getImageSize(targetNode: HTMLElement, options: Options = {}) {
-  const width = options.width || getNodeWidth(targetNode);
-  const height = options.height || getNodeHeight(targetNode);
+  const width = options.width || getNodeWidth(targetNode)
+  const height = options.height || getNodeHeight(targetNode)
 
-  return { width, height };
+  return { width, height }
 }
 
 export function getPixelRatio() {
-  let ratio;
+  let ratio
 
-  let FINAL_PROCESS;
+  let FINAL_PROCESS
   try {
-    FINAL_PROCESS = process;
+    FINAL_PROCESS = process
   } catch (e) {
     // pass
   }
@@ -104,18 +103,18 @@ export function getPixelRatio() {
   const val =
     FINAL_PROCESS && FINAL_PROCESS.env
       ? FINAL_PROCESS.env.devicePixelRatio
-      : null;
+      : null
   if (val) {
-    ratio = parseInt(val, 10);
+    ratio = parseInt(val, 10)
     if (Number.isNaN(ratio)) {
-      ratio = 1;
+      ratio = 1
     }
   }
-  return ratio || window.devicePixelRatio || 1;
+  return ratio || window.devicePixelRatio || 1
 }
 
 // @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#maximum_canvas_size
-const canvasDimensionLimit = 16384;
+const canvasDimensionLimit = 16384
 
 export function checkCanvasDimensions(canvas: HTMLCanvasElement) {
   if (
@@ -127,34 +126,34 @@ export function checkCanvasDimensions(canvas: HTMLCanvasElement) {
       canvas.height > canvasDimensionLimit
     ) {
       if (canvas.width > canvas.height) {
-        canvas.height *= canvasDimensionLimit / canvas.width;
-        canvas.width = canvasDimensionLimit;
+        canvas.height *= canvasDimensionLimit / canvas.width
+        canvas.width = canvasDimensionLimit
       } else {
-        canvas.width *= canvasDimensionLimit / canvas.height;
-        canvas.height = canvasDimensionLimit;
+        canvas.width *= canvasDimensionLimit / canvas.height
+        canvas.height = canvasDimensionLimit
       }
     } else if (canvas.width > canvasDimensionLimit) {
-      canvas.height *= canvasDimensionLimit / canvas.width;
-      canvas.width = canvasDimensionLimit;
+      canvas.height *= canvasDimensionLimit / canvas.width
+      canvas.width = canvasDimensionLimit
     } else {
-      canvas.width *= canvasDimensionLimit / canvas.height;
-      canvas.height = canvasDimensionLimit;
+      canvas.width *= canvasDimensionLimit / canvas.height
+      canvas.height = canvasDimensionLimit
     }
   }
 }
 
 export function canvasToBlob(
   canvas: HTMLCanvasElement,
-  options: Options = {}
+  options: Options = {},
 ): Promise<Blob | null> {
   if (canvas.toBlob) {
     return new Promise((resolve) => {
       canvas.toBlob(
         resolve,
         options.type ? options.type : 'image/png',
-        options.quality ? options.quality : 1
-      );
-    });
+        options.quality ? options.quality : 1,
+      )
+    })
   }
 
   return new Promise((resolve) => {
@@ -162,74 +161,65 @@ export function canvasToBlob(
       canvas
         .toDataURL(
           options.type ? options.type : undefined,
-          options.quality ? options.quality : undefined
+          options.quality ? options.quality : undefined,
         )
-        .split(',')[1]
-    );
-    const len = binaryString.length;
-    const binaryArray = new Uint8Array(len);
+        .split(',')[1],
+    )
+    const len = binaryString.length
+    const binaryArray = new Uint8Array(len)
 
     for (let i = 0; i < len; i += 1) {
-      binaryArray[i] = binaryString.charCodeAt(i);
+      binaryArray[i] = binaryString.charCodeAt(i)
     }
 
     resolve(
       new Blob([binaryArray], {
         type: options.type ? options.type : 'image/png',
-      })
-    );
-  });
+      }),
+    )
+  })
 }
 
 export function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    const resolveImg = (newImage: HTMLImageElement) => {
-      setTimeout(() => resolve(newImage), 50);
-    };
-    img.onload = (e) => {
-      const image = e.target || img;
-      if (typeof (image as HTMLImageElement).decode === 'function') {
-        (image as HTMLImageElement).decode().then(() => resolveImg(img));
-      } else {
-        resolveImg(img);
-      }
-    };
-    img.onerror = reject;
-    img.crossOrigin = 'anonymous';
-    img.decoding = 'sync';
-    img.src = url;
-  });
+    const img = new Image()
+    img.decode = () => setTimeout(() => resolve(img), 50) as any
+    img.onload = () => setTimeout(() => resolve(img), 50)
+    img.onerror = reject
+    img.crossOrigin = 'anonymous'
+    img.decoding = 'async'
+    img.src = url
+  })
 }
 
 export async function svgToDataURL(svg: SVGElement): Promise<string> {
   return Promise.resolve()
     .then(() => new XMLSerializer().serializeToString(svg))
     .then(encodeURIComponent)
-    .then((html) => `data:image/svg+xml;charset=utf-8,${html}`);
+    .then((html) => `data:image/svg+xml;charset=utf-8,${html}`)
 }
 
 export async function nodeToDataURL(
   node: HTMLElement,
   width: number,
-  height: number
+  height: number,
 ): Promise<string> {
-  const xmlns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(xmlns, 'svg');
-  const foreignObject = document.createElementNS(xmlns, 'foreignObject');
+  const xmlns = 'http://www.w3.org/2000/svg'
+  const svg = document.createElementNS(xmlns, 'svg')
+  const foreignObject = document.createElementNS(xmlns, 'foreignObject')
 
-  svg.setAttribute('width', `${width}`);
-  svg.setAttribute('height', `${height}`);
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('width', `${width}`)
+  svg.setAttribute('height', `${height}`)
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`)
 
-  foreignObject.setAttribute('width', '100%');
-  foreignObject.setAttribute('height', '100%');
-  foreignObject.setAttribute('x', '0');
-  foreignObject.setAttribute('y', '0');
-  foreignObject.setAttribute('externalResourcesRequired', 'true');
+  foreignObject.setAttribute('width', '100%')
+  foreignObject.setAttribute('height', '100%')
+  foreignObject.setAttribute('x', '0')
+  foreignObject.setAttribute('y', '0')
+  foreignObject.setAttribute('externalResourcesRequired', 'true')
 
-  svg.appendChild(foreignObject);
-  foreignObject.appendChild(node);
+  svg.appendChild(foreignObject)
+  foreignObject.appendChild(node)
 
-  return svgToDataURL(svg);
+  return svgToDataURL(svg)
 }

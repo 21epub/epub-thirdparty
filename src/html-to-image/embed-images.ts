@@ -1,4 +1,4 @@
-import type { Options } from './types'
+import { Options } from './types'
 import { embedResources } from './embed-resources'
 import { toArray } from './util'
 import { isDataUrl, resourceToDataURL } from './dataurl'
@@ -42,6 +42,12 @@ async function embedImageNode<T extends HTMLElement | SVGImageElement>(
   await new Promise((resolve, reject) => {
     clonedNode.onload = resolve
     clonedNode.onerror = reject
+
+    const image = clonedNode as HTMLImageElement
+    if (image.decode) {
+      image.decode = resolve as any
+    }
+
     if (clonedNode instanceof HTMLImageElement) {
       clonedNode.srcset = ''
       clonedNode.src = dataURL
