@@ -2222,7 +2222,8 @@
         }
       },
       _eventMove: function (e) {
-        var data = this.data().f;
+        var data = this.data().f,
+          turn = data.opts.turn;
         if (!data.disabled) {
           e = isTouch ? e.originalEvent.touches : [e];
           if (data.corner) {
@@ -2253,8 +2254,12 @@
                 flipMethods.hideFoldedPage.call(this, true);
               }
             }
-          } else {
-            if (isTouch) data.corner = flipMethods._isIArea.call(this, e[0]);
+          } else if (
+            isTouch &&
+            !this.flip('isTurning') &&
+            data.opts.page == turn.data().pagePlace[data.opts.page]
+          ) {
+            data.corner = flipMethods._isIArea.call(this, e[0]);
           }
         }
       },

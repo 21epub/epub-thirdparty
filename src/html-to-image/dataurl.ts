@@ -1,4 +1,4 @@
-import { Options } from './types'
+import type { Options } from './types'
 
 function getContentFromDataUrl(dataURL: string) {
   return dataURL.split(/,/)[1]
@@ -93,7 +93,7 @@ export async function resourceToDataURL(
       },
     )
     dataURL = makeDataUrl(content, contentType!)
-  } catch (error) {
+  } catch (error:any) {
     dataURL = options.imagePlaceholder || ''
 
     let msg = `Failed to fetch resource: ${resourceUrl}`

@@ -142,7 +142,7 @@ async function getCSSRules(
             deferreds.push(deferred)
           }
         })
-      } catch (e) {
+      } catch (e:any) {
         const inline =
           styleSheets.find((a) => a.href == null) || document.styleSheets[0]
         if (sheet.href != null) {
@@ -159,7 +159,7 @@ async function getCSSRules(
               }),
           )
         }
-        console.error('Error inlining remote css file', e.toString())
+        console.error('Error inlining remote css file', e?.toString())
       }
     }
   })
@@ -172,10 +172,10 @@ async function getCSSRules(
           toArray<CSSStyleRule>(sheet.cssRules || []).forEach((item) => {
             ret.push(item)
           })
-        } catch (e) {
+        } catch (e:any) {
           console.error(
             `Error while reading CSS rules from ${sheet.href}`,
-            e.toString(),
+            e?.toString(),
           )
         }
       }
