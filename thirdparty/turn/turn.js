@@ -62,10 +62,14 @@
       turnCorners: 'bl,br',
       // Events
       when: null,
+      // 缩放大小
+      scale: 1,
+      // 是否禁止点击翻页
+      disableMouseDown: false
     },
     flipOptions = {
       // 设置每个角的活动区域大小
-      cornerSize: 150,
+      cornerSize: 100,
     },
     // 设置多少页面可以显示在html的DOM树中，最小值为6
     pagesInDOM = 200,
@@ -94,6 +98,8 @@
           turnOptions,
           options
         );
+        turnOptions.scale = options.scale || 1;
+        turnOptions.disableMouseDown = options.disableMouseDown || false
         data.opts = options;
         data.pageObjs = {};
         data.pages = {};
@@ -1063,6 +1069,9 @@
       },
       //
       _touchStart: function () {
+        if(turnOptions.disableMouseDown) {
+          return false;
+        }
         var data = this.data();
         for (var page in data.pages) {
           if (
@@ -1420,9 +1429,10 @@
       _isIArea: function (e) {
         var pos = this.data().f.parent.offset();
         e = isTouch && e.originalEvent ? e.originalEvent.touches[0] : e;
+        var scale = turnOptions.scale || 1;
         return flipMethods._cornerActivated.call(this, {
-          x: e.pageX - pos.left,
-          y: e.pageY - pos.top,
+          x: (e.pageX - pos.left) / scale,
+          y: (e.pageY - pos.top) / scale,
         });
       },
       _c: function (corner, opts) {
@@ -2228,8 +2238,9 @@
           e = isTouch ? e.originalEvent.touches : [e];
           if (data.corner) {
             var pos = data.parent.offset();
-            data.corner.x = e[0].pageX - pos.left;
-            data.corner.y = e[0].pageY - pos.top;
+            var scale = turnOptions.scale || 1;
+            data.corner.x = (e[0].pageX - pos.left) / scale;
+            data.corner.y = (e[0].pageY - pos.top) / scale;
             flipMethods._showFoldedPage.call(this, data.corner);
           } else if (data.hover && !this.data().effect && this.is(':visible')) {
             var point = flipMethods._isIArea.call(this, e[0]);
